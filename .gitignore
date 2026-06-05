@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.ipynb_checkpoints/
+
+# Virtual Environments
+venv/
+.venv/
+env/
+
+# IDEs
+.vscode/
+.idea/
+
+# Word Temporary files
+.~lock.*
+~$*.docx
+
+# Dataset (Do not upload large data files to GitHub)
+planttraits2024/
+train_images/
+test_images/
+*.csv
+!sample_submission.csv
+!sample.csv

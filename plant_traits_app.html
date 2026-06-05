@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌿 PlantTraits AI - Bitki Özelliği Analiz Sistemi</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --panel-bg: rgba(17, 24, 39, 0.7);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --accent-color: #10b981;
+            --accent-hover: #059669;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --neon-glow: 0 0 15px rgba(16, 185, 129, 0.4);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.1) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(59, 130, 246, 0.1) 0px, transparent 50%);
+            background-attachment: fixed;
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(to right, #10b981, #3b82f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        .main-container {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 2rem;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        @media (max-width: 900px) {
+            .main-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Glassmorphism Panel */
+        .panel {
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            transition: all 0.3s ease;
+        }
+
+        .panel:hover {
+            border-color: rgba(16, 185, 129, 0.2);
+        }
+
+        .panel-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.75rem;
+        }
+
+        .panel-title i {
+            color: var(--accent-color);
+        }
+
+        /* File Upload */
+        .upload-area {
+            border: 2px dashed var(--border-color);
+            border-radius: 12px;
+            padding: 2.5rem 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            background: rgba(255, 255, 255, 0.02);
+            overflow: hidden;
+        }
+
+        .upload-area:hover {
+            border-color: var(--accent-color);
+            background: rgba(16, 185, 129, 0.04);
+            box-shadow: var(--neon-glow);
+        }
+
+        .upload-area i {
+            font-size: 3rem;
+            color: var(--accent-color);
+            margin-bottom: 1rem;
+        }
+
+        .upload-area p {
+            font-size: 1rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .upload-area span {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .image-preview {
+            width: 100%;
+            max-height: 250px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-top: 1rem;
+            display: none;
+            border: 1px solid var(--border-color);
+        }
+
+        /* Sliders / Form */
+        .form-group {
+            margin-bottom: 1.2rem;
+        }
+
+        .form-group label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .form-group label span.val {
+            color: var(--accent-color);
+            font-weight: 600;
+        }
+
+        .slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.1);
+            outline: none;
+            transition: background 450ms ease-in;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--accent-color);
+            cursor: pointer;
+            box-shadow: var(--neon-glow);
+            transition: transform 0.1s;
+        }
+
+        .slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, var(--accent-color), #3b82f6);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            margin-top: 1.5rem;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--neon-glow);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        /* Results Display */
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        @media (max-width: 500px) {
+            .results-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .result-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .result-card:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(16, 185, 129, 0.15);
+        }
+
+        .result-meta {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 0.25rem;
+            text-transform: uppercase;
+        }
+
+        .result-name {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-main);
+        }
+
+        .result-value {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--accent-color);
+        }
+
+        .result-unit {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+
+        .chart-container {
+            width: 100%;
+            height: 300px;
+            margin-top: 1.5rem;
+            position: relative;
+        }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(11, 15, 25, 0.85);
+            backdrop-filter: blur(8px);
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .loading-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(16, 185, 129, 0.1);
+            border-top: 3px solid var(--accent-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: var(--text-main);
+            font-weight: 600;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1><i class="fa-solid fa-leaf"></i> PlantTraits AI</h1>
+        <p>Gelişmiş Çok Kanallı (Late Fusion) Bitki Özelliği Kestirim Arayüzü</p>
+    </header>
+
+    <div class="main-container">
+        <!-- Input Panel -->
+        <div class="panel" style="position: relative;">
+            <div class="panel-title">
+                <i class="fa-solid fa-sliders"></i> Analiz Girdileri
+            </div>
+
+            <!-- Upload Area -->
+            <div class="form-group">
+                <label>Bitki Fotoğrafı Yükle</label>
+                <div class="upload-area" id="drop-zone">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                    <p>Dosyayı buraya sürükleyin veya tıklayın</p>
+                    <span>JPEG, PNG (Maks. 10MB)</span>
+                    <input type="file" id="file-input" style="display: none;" accept="image/*">
+                    <img id="preview" class="image-preview" alt="Bitki önizleme">
+                </div>
+            </div>
+
+            <!-- Environmental Inputs -->
+            <div class="form-group">
+                <label>Ortalama Sıcaklık (°C) <span class="val" id="temp-val">15°C</span></label>
+                <input type="range" class="slider" id="temp" min="-5" max="35" value="15">
+            </div>
+
+            <div class="form-group">
+                <label>Yıllık Yağış Miktarı (mm) <span class="val" id="precip-val">800 mm</span></label>
+                <input type="range" class="slider" id="precip" min="100" max="3000" step="50" value="800">
+            </div>
+
+            <div class="form-group">
+                <label>Rakım / Yükseklik (m) <span class="val" id="elev-val">500 m</span></label>
+                <input type="range" class="slider" id="elev" min="0" max="3000" step="50" value="500">
+            </div>
+
+            <div class="form-group">
+                <label>Toprak pH Seviyesi <span class="val" id="ph-val">6.5</span></label>
+                <input type="range" class="slider" id="ph" min="4.0" max="9.0" step="0.1" value="6.5">
+            </div>
+
+            <button class="btn" id="analyze-btn">🌿 Özellikleri Analiz Et</button>
+        </div>
+
+        <!-- Output Panel -->
+        <div class="panel" style="position: relative;">
+            <div class="loading-overlay" id="loading">
+                <div class="spinner"></div>
+                <div class="loading-text">Çok Kanallı Model Tahmin Yapıyor...</div>
+            </div>
+
+            <div class="panel-title">
+                <i class="fa-solid fa-square-poll-vertical"></i> Tahmin Sonuçları (6 Trait)
+            </div>
+
+            <div class="results-grid">
+                <!-- X4 -->
+                <div class="result-card">
+                    <div class="result-meta">X4</div>
+                    <div class="result-name">Gövde Yoğunluğu</div>
+                    <div class="result-value" id="val-x4">0.52 <span class="result-unit">mg/mm³</span></div>
+                </div>
+                <!-- X11 -->
+                <div class="result-card">
+                    <div class="result-meta">X11</div>
+                    <div class="result-name">Özgül Yaprak Alanı</div>
+                    <div class="result-value" id="val-x11">15.4 <span class="result-unit">mm²/mg</span></div>
+                </div>
+                <!-- X18 -->
+                <div class="result-card">
+                    <div class="result-meta">X18</div>
+                    <div class="result-name">Bitki Boyu</div>
+                    <div class="result-value" id="val-x18">1.85 <span class="result-unit">metre</span></div>
+                </div>
+                <!-- X26 -->
+                <div class="result-card">
+                    <div class="result-meta">X26</div>
+                    <div class="result-name">Tohum Kuru Kütlesi</div>
+                    <div class="result-value" id="val-x26">12.5 <span class="result-unit">mg</span></div>
+                </div>
+                <!-- X50 -->
+                <div class="result-card">
+                    <div class="result-meta">X50</div>
+                    <div class="result-name">Yaprak Azot Miktarı</div>
+                    <div class="result-value" id="val-x50">1.68 <span class="result-unit">g/m²</span></div>
+                </div>
+                <!-- X3112 -->
+                <div class="result-card">
+                    <div class="result-meta">X3112</div>
+                    <div class="result-name">Yaprak Alanı</div>
+                    <div class="result-value" id="val-x3112">620 <span class="result-unit">mm²</span></div>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <canvas id="traitsChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const tempSlider = document.getElementById('temp');
+        const precipSlider = document.getElementById('precip');
+        const elevSlider = document.getElementById('elev');
+        const phSlider = document.getElementById('ph');
+
+        const tempVal = document.getElementById('temp-val');
+        const precipVal = document.getElementById('precip-val');
+        const elevVal = document.getElementById('elev-val');
+        const phVal = document.getElementById('ph-val');
+
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const preview = document.getElementById('preview');
+        const analyzeBtn = document.getElementById('analyze-btn');
+        const loading = document.getElementById('loading');
+
+        // Sliders value updates
+        tempSlider.addEventListener('input', (e) => tempVal.textContent = e.target.value + '°C');
+        precipSlider.addEventListener('input', (e) => precipVal.textContent = e.target.value + ' mm');
+        elevSlider.addEventListener('input', (e) => elevVal.textContent = e.target.value + ' m');
+        phSlider.addEventListener('input', (e) => phVal.textContent = e.target.value);
+
+        // Upload Area Event Listeners
+        dropZone.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = '#10b981';
+        });
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+        });
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+            const file = e.dataTransfer.files[0];
+            handleFile(file);
+        });
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            handleFile(file);
+        });
+
+        let uploadedImage = false;
+        let imageColorBias = { r: 120, g: 120, b: 120 }; // default center
+
+        function handleFile(file) {
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                    uploadedImage = true;
+                    
+                    // Simple logic to extract color bias to dynamically influence features
+                    const img = new Image();
+                    img.src = e.target.result;
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        canvas.width = 10;
+                        canvas.height = 10;
+                        ctx.drawImage(img, 0, 0, 10, 10);
+                        const data = ctx.getImageData(0, 0, 10, 10).data;
+                        let r = 0, g = 0, b = 0;
+                        for (let i = 0; i < data.length; i += 4) {
+                            r += data[i]; g += data[i+1]; b += data[i+2];
+                        }
+                        imageColorBias.r = r / 25;
+                        imageColorBias.g = g / 25;
+                        imageColorBias.b = b / 25;
+                    }
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // Initialize Chart
+        const ctx = document.getElementById('traitsChart').getContext('2d');
+        const traitsChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Gövde Yoğunluğu', 'Özgül Yaprak Alanı', 'Bitki Boyu', 'Tohum Kütlesi', 'Yaprak Azotu', 'Yaprak Alanı'],
+                datasets: [{
+                    label: 'Göreli Özellik Değeri (Normalize edilmiş)',
+                    data: [50, 45, 60, 30, 55, 40],
+                    backgroundColor: [
+                        'rgba(16, 185, 129, 0.6)',
+                        'rgba(59, 130, 246, 0.6)',
+                        'rgba(245, 158, 11, 0.6)',
+                        'rgba(239, 68, 68, 0.6)',
+                        'rgba(139, 92, 246, 0.6)',
+                        'rgba(236, 72, 153, 0.6)'
+                    ],
+                    borderColor: [
+                        '#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'
+                    ],
+                    borderWidth: 1.5,
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                        ticks: { color: '#9ca3af' }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#9ca3af' }
+                    }
+                }
+            }
+        });
+
+        // Simulating the PyTorch model prediction process
+        analyzeBtn.addEventListener('click', () => {
+            loading.classList.add('active');
+
+            setTimeout(() => {
+                const temp = parseFloat(tempSlider.value);
+                const precip = parseFloat(precipSlider.value);
+                const elev = parseFloat(elevSlider.value);
+                const ph = parseFloat(phSlider.value);
+
+                // Math simulation matching ecological principles:
+                // High temp + precipitation = large leaves (X3112), high plant height (X18)
+                // Dry/Cold = Dense stems (X4), small leaves
+                let x18 = (0.5 + (temp * 0.05) + (precip * 0.001) - (elev * 0.0002) + (imageColorBias.g * 0.002)) / 5.0;
+                x18 = Math.max(0.02, x18);
+
+                let x3112 = 100 + (precip * 0.3) + (temp * 10) - (elev * 0.1) + (imageColorBias.g * 2);
+                x3112 = Math.max(10, x3112);
+
+                let x4 = 0.6 - (precip * 0.0001) + (elev * 0.00005) - (temp * 0.005);
+                x4 = Math.min(0.9, Math.max(0.2, x4));
+
+                let x11 = 8.0 + (temp * 0.3) + (precip * 0.002) - (ph * 0.2);
+                x11 = Math.max(2.0, x11);
+
+                let x26 = 5.0 + (elev * 0.005) + (precip * 0.002) + (imageColorBias.r * 0.02);
+                x26 = Math.max(0.1, x26);
+
+                let x50 = 1.0 + (ph * 0.1) + (temp * 0.01) - (precip * 0.0001);
+                x50 = Math.max(0.2, x50);
+
+                // Populate UI
+                document.getElementById('val-x4').innerHTML = x4.toFixed(3) + ' <span class="result-unit">mg/mm³</span>';
+                document.getElementById('val-x11').innerHTML = x11.toFixed(1) + ' <span class="result-unit">mm²/mg</span>';
+                document.getElementById('val-x18').innerHTML = x18.toFixed(2) + ' <span class="result-unit">metre</span>';
+                document.getElementById('val-x26').innerHTML = x26.toFixed(2) + ' <span class="result-unit">mg</span>';
+                document.getElementById('val-x50').innerHTML = x50.toFixed(2) + ' <span class="result-unit">g/m²</span>';
+                document.getElementById('val-x3112').innerHTML = Math.round(x3112) + ' <span class="result-unit">mm²</span>';
+
+                // Map to chart values (scaled to 0-100 for clear visualization)
+                const chartData = [
+                    (x4 / 0.9) * 100,
+                    (x11 / 30) * 100,
+                    (x18 / 1.0) * 100,
+                    (x26 / 40.0) * 100,
+                    (x50 / 3.0) * 100,
+                    (x3112 / 2000) * 100
+                ];
+
+                traitsChart.data.datasets[0].data = chartData;
+                traitsChart.update();
+
+                loading.classList.remove('active');
+            }, 1200); // 1.2s delay to simulate model latency
+        });
+    </script>
+</body>
+</html>
